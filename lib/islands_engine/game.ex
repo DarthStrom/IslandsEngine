@@ -7,8 +7,10 @@ defmodule IslandsEngine.Game do
 
   # Public
 
+  def via_tuple(name), do: {:via, Registry, {Registry.Game, name}}
+
   def start_link(name) when is_binary(name), do:
-    GenServer.start_link(__MODULE__, name, [])
+    GenServer.start_link(__MODULE__, name, via_tuple(name))
 
   def init(name) do
     player1 = %{name: name, board: Board.new(), guesses: Guesses.new()}
@@ -80,7 +82,7 @@ defmodule IslandsEngine.Game do
   def handle_call({:guess_coordinate, player_key, row, col}, _from, state_data) do
     opponent_key = opponent(player_key)
     opponent_board = player_board(state_data, opponent_key)
-    
+
     with {:ok, rules} <- Rules.check(state_data.rules, {:guess_coordinate, player_key}),
          {:ok, coordinate} <- Coordinate.new(row, col),
          {hit_or_miss, forested_island, win_status, opponent_board} <-

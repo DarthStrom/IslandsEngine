@@ -12,6 +12,7 @@ defmodule IslandsEngine.Application do
     children = [
       # Starts a worker by calling: IslandsEngine.Worker.start_link(arg1, arg2, arg3)
       # worker(IslandsEngine.Worker, [arg1, arg2, arg3]),
+      supervisor(Registry, [:unique, Registry.Game])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
