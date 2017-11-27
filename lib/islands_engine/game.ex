@@ -4,18 +4,19 @@ defmodule IslandsEngine.Game do
   use GenServer, start: {__MODULE__, :start_link, []}, restart: :transient
 
   @players [:player1, :player2]
+  @timeout 60 * 60 * 24 * 1000
 
   # Public
 
   def via_tuple(name), do: {:via, Registry, {Registry.Game, name}}
 
   def start_link(name) when is_binary(name), do:
-    GenServer.start_link(__MODULE__, name, via_tuple(name))
+    GenServer.start_link(__MODULE__, name, name: via_tuple(name))
 
   def init(name) do
     player1 = %{name: name, board: Board.new(), guesses: Guesses.new()}
     player2 = %{name: nil, board: Board.new(), guesses: Guesses.new()}
-    {:ok, %{player1: player1, player2: player2, rules: %Rules{}}}
+    {:ok, %{player1: player1, player2: player2, rules: %Rules{}}, @timeout}
   end
 
   def add_player(game, name) when is_binary(name), do:
@@ -102,6 +103,10 @@ defmodule IslandsEngine.Game do
     end
   end
 
+  def handle_info(:timeout, state_data) do
+    {:stop, {:shutdown, :timeout}, state_data}
+  end
+
   # Private
 
   defp update_player2_name(state_data, name), do:
@@ -109,7 +114,9 @@ defmodule IslandsEngine.Game do
 
   defp update_rules(state_data, rules), do: %{state_data | rules: rules}
 
-  defp reply_success(state_data, reply), do: {:reply, reply, state_data}
+  defp reply_success(state_data, reply) do
+    {:reply, reply, state_data, @timeout}
+  end
 
   defp update_board(state_data, player, board), do:
     Map.update!(state_data, player, fn player -> %{player | board: board} end)
